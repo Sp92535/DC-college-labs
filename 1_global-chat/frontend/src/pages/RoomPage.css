@@ -1,0 +1,86 @@
+/* RoomPage.css */
+.room-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f7fafc;
+  }
+  
+  .chat-container {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 600px;
+  }
+  
+  .room-code {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #3182ce;
+  }
+  
+  .users-list h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  
+  .users-list ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .users-list li {
+    font-size: 0.875rem;
+    color: #333;
+  }
+  
+  .chat-window {
+    border: 1px solid #ccc;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  
+  .message {
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+  }
+  
+  .timestamp {
+    font-size: 0.75rem;
+    color: #999;
+  }
+  
+  .message-input {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .message-input input {
+    flex-grow: 1;
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .message-input button {
+    padding: 0.75rem 1rem;
+    background-color: #4299e1;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .message-input button:hover {
+    background-color: #3182ce;
+  }
+  
