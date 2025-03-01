@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "./pb";
+
+service Cricket {
+    rpc getTopScorers(Empty) returns (TopScoreResponse); 
+    rpc getCenturions(Empty) returns (CenturionsResponse); 
+    rpc getPlayerStats(PlayerRequest) returns(StatsResponse);
+    rpc updatePlayerScore(UpdateScoreRequest) returns(Empty);
+}
+
+message PlayerRequest{
+    string name = 1;
+}
+
+message UpdateScoreRequest {
+  string name = 1;
+  uint32 runs = 2;
+}
+
+message StatsResponse{
+    string name = 1;
+    double average = 2;
+    uint32 centuries = 3;
+}
+
+message TopScoreResponse {
+  string name = 1;
+  double average = 2;
+}
+message CenturionsResponse {
+    string name = 1;
+    uint32 centuries = 2;
+}
+
+message Empty{}
