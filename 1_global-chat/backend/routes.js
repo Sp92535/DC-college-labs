@@ -38,5 +38,8 @@ router.get("/messages/:roomId", async (req, res) => {
     }
 });
 
+router.get("/",(req,res)=>{
+    res.send("<h1>ALL WORKING GOOD</h1>")
+})
 
 module.exports = router;

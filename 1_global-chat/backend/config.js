@@ -1,3 +1,3 @@
-const DB = "mongodb://192.168.1.101:27017/global-chat"
-
+require('dotenv').config();
+const DB = process.env.DB_URL
 module.exports = { DB }
