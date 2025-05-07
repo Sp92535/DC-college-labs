@@ -1,0 +1,39 @@
+syntax="proto3";
+
+package election;
+
+option go_package = "pb/";
+
+service Tracker{
+    rpc Register(RegisterRequest)returns(Empty);    
+    rpc GetNodes(Empty)returns(GetNodesResponse);
+}
+
+// pid -> address
+message GetNodesResponse{
+    map<int64,string> Address = 1;
+}
+
+message RegisterRequest{
+    string Address  = 1;
+    int64 Pid = 2;
+}
+
+
+service Node{
+    rpc Election(ElectionRequest)returns(Empty);    
+    rpc Ping(Empty)returns(Empty);
+    rpc Cordinator(CordinatorRequest)returns(Empty);
+}
+
+message ElectionRequest{
+    bool Ring = 1;
+    repeated int64 Pid = 2;
+}
+
+message CordinatorRequest{
+    string Address = 1;
+    int64 Pid = 2;
+}
+
+message Empty{}
