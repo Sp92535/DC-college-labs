@@ -1,0 +1,47 @@
+services:
+
+  go-server-1:
+    build: .
+    networks:
+      - lb-net
+
+  go-server-2:
+    build: .
+    networks:
+      - lb-net
+
+  go-server-3:
+    build: .
+    networks:
+      - lb-net
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "9999:9999"
+    volumes:
+      - ./lb.conf:/etc/nginx/nginx.conf
+    networks:
+      - lb-net
+    depends_on:
+      - go-server-1
+      - go-server-2
+      - go-server-3
+
+  haproxy:
+    image: haproxy:latest
+    ports:
+      - "8888:8888"
+      - "8404:8404"
+    volumes:
+      - ./lb.cfg:/usr/local/etc/haproxy/haproxy.cfg
+    networks:
+      - lb-net
+    depends_on:
+      - go-server-1
+      - go-server-2
+      - go-server-3
+
+networks:
+  lb-net:
+    driver: bridge

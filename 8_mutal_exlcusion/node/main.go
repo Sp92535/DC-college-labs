@@ -5,9 +5,8 @@ import (
 	"log"
 	"net"
 	"os"
-	"time"
-
 	"slices"
+	"time"
 
 	pb "github.com/Sp92535/pb"
 	"google.golang.org/grpc"
@@ -16,21 +15,34 @@ import (
 
 type NodeServer struct {
 	pb.UnimplementedNodeServer
-	co    string
-	nodes map[int64]string
-	pid   int64
-	add   string
+	co       string
+	nodes    map[int64]string
+	pid      int64
+	add      string
+	hasToken bool
 }
 
-func (n *NodeServer) Election(ctx context.Context, req *pb.ElectionRequest) (*pb.Empty, error) {
-	if req.Ring {
-		n.ring(req.Pid)
+func (n *NodeServer) Election(ctx context.Context, req *pb.Empty) (*pb.Empty, error) {
+	return &pb.Empty{}, nil
+}
+
+func (n *NodeServer) GiveToken(ctx context.Context, req *pb.Empty) (*pb.Empty, error) {
+	n.hasToken = true
+	return &pb.Empty{}, nil
+}
+
+func (n *NodeServer) Ping(ctx context.Context, req *pb.Empty) (*pb.EnterResponse, error) {
+
+	opts := grpc.WithTransportCredentials(insecure.NewCredentials())
+	criticalConn, err := grpc.NewClient(":9595", opts)
+	if err != nil {
+		log.Fatalf("error connecting critical :%v", err)
 	}
-	return &pb.Empty{}, nil
-}
 
-func (n *NodeServer) Ping(ctx context.Context, req *pb.Empty) (*pb.Empty, error) {
-	return &pb.Empty{}, nil
+	criticalClient := pb.NewCriticalClient(criticalConn)
+	res, err := criticalClient.Enter(context.Background(), &pb.Empty{})
+	criticalConn.Close()
+	return res, err
 }
 
 func (n *NodeServer) Cordinator(ctx context.Context, req *pb.CordinatorRequest) (*pb.Empty, error) {
@@ -50,8 +62,9 @@ func main() {
 	grpcServer := grpc.NewServer()
 
 	nodeServer := &NodeServer{
-		pid: int64(os.Getpid()),
-		add: listner.Addr().String(),
+		pid:      int64(os.Getpid()),
+		add:      listner.Addr().String(),
+		hasToken: os.Args[1] == "token",
 	}
 
 	pb.RegisterNodeServer(grpcServer, nodeServer)
@@ -95,25 +108,34 @@ func main() {
 	}()
 
 	ticker := time.NewTicker(10 * time.Second)
-	for {
+	for os.Args[1] == "cent" {
 		select {
 		case <-ticker.C:
 			nodeConn, _ := grpc.NewClient(nodeServer.co, opts)
 			nodeClient := pb.NewNodeClient(nodeConn)
 
-			_, err := nodeClient.Ping(context.Background(), &pb.Empty{})
+			res, err := nodeClient.Ping(context.Background(), &pb.Empty{})
+			log.Print(res)
 			nodeConn.Close()
 
 			if err != nil {
-				if os.Args[1] == "ring" {
-					var arr []int64
-					nodeServer.ring(arr)
-				} else {
-					nodeServer.bully()
-				}
+				log.Println(err)
+				// var arr []int64
+				// nodeServer.ring(arr)
+				nodeServer.bully()
 			}
 
 		default:
+		}
+	}
+
+	for {
+		if nodeServer.hasToken {
+			select {
+			case <-ticker.C:
+				nodeServer.ring()
+			default:
+			}
 		}
 	}
 
@@ -128,7 +150,7 @@ func (n *NodeServer) bully() {
 			nodeConn, _ := grpc.NewClient(add, opts)
 			nodeClient := pb.NewNodeClient(nodeConn)
 
-			_, err := nodeClient.Election(context.Background(), &pb.ElectionRequest{Ring: false})
+			_, err := nodeClient.Election(context.Background(), &pb.Empty{})
 			if err == nil {
 				cor = false
 			}
@@ -148,26 +170,19 @@ func (n *NodeServer) bully() {
 	}
 }
 
-func (n *NodeServer) ring(arr []int64) {
+func (n *NodeServer) ring() {
 
-	log.Printf("Starting Ring Election....")
 	opts := grpc.WithTransportCredentials(insecure.NewCredentials())
-
-	if len(arr) > 0 && arr[0] == n.pid {
-
-		max := slices.Max(arr)
-		for _, add := range n.nodes {
-
-			nodeConn, _ := grpc.NewClient(add, opts)
-			nodeClient := pb.NewNodeClient(nodeConn)
-
-			nodeClient.Cordinator(context.Background(), &pb.CordinatorRequest{Address: n.nodes[max], Pid: max})
-
-			nodeConn.Close()
-		}
-
-		return
+	criticalConn, err := grpc.NewClient(":9595", opts)
+	if err != nil {
+		log.Fatalf("error connecting critical :%v", err)
 	}
+
+	criticalClient := pb.NewCriticalClient(criticalConn)
+
+	res, _ := criticalClient.Enter(context.Background(), &pb.Empty{})
+	criticalConn.Close()
+	log.Println(res)
 
 	var sorted []int64
 
@@ -182,17 +197,13 @@ func (n *NodeServer) ring(arr []int64) {
 			break
 		}
 	}
-
-	arr = append(arr, n.pid)
 	for _, v := range sorted {
 		nodeConn, _ := grpc.NewClient(n.nodes[v], opts)
 		nodeClient := pb.NewNodeClient(nodeConn)
 
-		_, err := nodeClient.Election(context.Background(), &pb.ElectionRequest{
-			Ring: true,
-			Pid:  arr,
-		})
+		_, err := nodeClient.GiveToken(context.Background(), &pb.Empty{})
 		if err == nil {
+			n.hasToken = false
 			break
 		}
 		nodeConn.Close()

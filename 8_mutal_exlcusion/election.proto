@@ -1,0 +1,42 @@
+syntax="proto3";
+
+package election;
+
+option go_package = "pb/";
+
+service Tracker{
+    rpc Register(RegisterRequest)returns(Empty);    
+    rpc GetNodes(Empty)returns(GetNodesResponse);
+}
+
+message GetNodesResponse{
+    map<int64,string> Address = 1;
+}
+
+message RegisterRequest{
+    string Address  = 1;
+    int64 Pid = 2;
+}
+
+
+service Node{
+    rpc Election(Empty)returns(Empty);    
+    rpc Ping(Empty)returns(EnterResponse);
+    rpc Cordinator(CordinatorRequest)returns(Empty);
+    rpc GiveToken(Empty) returns(Empty);
+}
+
+message CordinatorRequest{
+    string Address = 1;
+    int64 Pid = 2;
+}
+
+service Critical{
+    rpc Enter(Empty)returns(EnterResponse);
+}
+
+message EnterResponse{
+    int64 Shared = 1;
+}
+
+message Empty{}
